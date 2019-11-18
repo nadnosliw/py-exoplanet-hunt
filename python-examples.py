@@ -149,11 +149,14 @@ def generate_current_date_str():
 def make_file_name_with_date(directory, name_stub, extension):
     return directory + '/' + name_stub + generate_current_date_str() + extension
 
+
 def headline(text, symbol, width):
     return f" {text} ".center(width, symbol)
 
 
 ''' ===== EXECUTION ====='''
+
+
 def output_all():
     counter = 0
     while counter < len(list_of_exercises):
