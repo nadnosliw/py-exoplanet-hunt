@@ -76,7 +76,7 @@ def exercise_7():
     fig = plt.figure()  # Initialise the figure for plotting onto
     plt.plot(x, y, 'r+')
     # plt.show()
-    filename = make_file_name_with_date('plot-exercise_7-', '.png')
+    filename = make_file_name_with_date(directory='Plots', name_stub='plot-exercise_7-', extension='.png')
     fig.savefig(filename)
     print('** Plot saved as ' + filename + ' **')
 
@@ -86,13 +86,13 @@ def exercise_8():
     fig = plt.figure()  # Initialise the figure for plotting onto
     plt.plot(x, y, '-m')
     # plt.show()
-    filename = make_file_name_with_date('plot-exercise_8-', '.png')
+    filename = make_file_name_with_date(directory='Plots', name_stub='plot-exercise_8-', extension='.png')
     fig.savefig(filename)
     print('** Plot saved as ' + filename + ' **')
 
 def exercise_9():
-    print('''Task: Find the individual sums of the ‘x’ data and the ‘y’ data and
-	print them to the terminal''')
+    print('''Task: Find the individual sums of the 'x' data and the 'y' data and
+    print them to the terminal''')
     x, y = np.loadtxt('DATA/xy.txt', unpack=True)
     num_of_items = len(x)
     counter = 0
@@ -102,19 +102,27 @@ def exercise_9():
         print('{} + {} = {}'.format(str(temp_x), str(temp_y), temp_x + temp_y))
         counter += 1
 
-
 def exercise_9_a():
     print('''Task: Find the individual sums of the ‘x’ data and the ‘y’ data and
-	print them to the terminal''')
+    print them to the terminal''')
     x, y = np.loadtxt('DATA/xy.txt', unpack=True)
     x_and_y = np.vstack((x, y)).T
     print(np.sum(x_and_y, axis=1))
 
+def exercise_10():
+    print('''Task: 10. Determine the individual means for the ‘x’ and ‘y’ data and print them to
+    the terminal''')
+    x, y = np.loadtxt('DATA/xy.txt', unpack=True)
+    x_and_y = np.vstack((x, y)).T
+    print(np.mean(x_and_y, axis=1))
+
+
 ''' ===== END EXERCISE ROUTINES ====='''
+
 
 list_of_exercises = [exercise_1, exercise_2, exercise_3, exercise_4,
                      exercise_5, exercise_6, exercise_7, exercise_8,
-                     exercise_9, exercise_9_a]
+                     exercise_9, exercise_9_a, exercise_10]
 
 
 def generate_current_date_str():
@@ -138,14 +146,17 @@ def generate_current_date_str():
     return current_date_str
 
 
-def make_file_name_with_date(name_stub, extension):
-    return name_stub + generate_current_date_str() + extension
+def make_file_name_with_date(directory, name_stub, extension):
+    return directory + '/' + name_stub + generate_current_date_str() + extension
+
 
 def headline(text, symbol, width):
     return f" {text} ".center(width, symbol)
 
 
 ''' ===== EXECUTION ====='''
+
+
 def output_all():
     counter = 0
     while counter < len(list_of_exercises):
