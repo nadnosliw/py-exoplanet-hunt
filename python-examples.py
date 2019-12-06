@@ -1,5 +1,7 @@
-# ================================== V.03.1 ================================== #
-# Exercise 11 modified with new validity checking logic
+# ================================== V.03.2 ================================== #
+# Updated python-examples to version 3.2
+# - exercise_11 has some error messages for user input routine
+# - tweaked logical tests to be more readable
 #
 # ========================================================================== #
 
@@ -120,9 +122,22 @@ def exercise_11():
     year = 0
     year_is_valid = False
     variables = [[day, 'day', day_is_valid], [month, 'month', month_is_valid], [year, 'year', year_is_valid]]
+    variables = {'day': 0, 'month': 0, 'year': 0}
+    variable_validity = {'day': False, 'month': False, 'year': False}
 
     input_message = 'Input the <variable> for today\'s date as an integer:  '
 
+    while not variable_validity['day'] or not variable_validity['month'] or not variable_validity['year']:
+        for variable_name in variables.keys():  # Gets key names for variables dict as list
+            if not variable_validity[variable_name]:
+                variables[variable_name] = int(input(input_message.replace('<variable>', variable_name)))
+        day = variables['day']
+        month = variables['month']
+        year = variables['year']
+        variable_validity['day'], variable_validity['month'], variable_validity['year'] = \
+            check_date_validity(day, month, year)
+
+    """
     while not variables[0][2] or not variables[1][2] or not variables[2][2]:
         print('Back to while loop')
         for variable in variables:
@@ -132,6 +147,7 @@ def exercise_11():
         month = variables[1][0]
         year = variables[2][0]
         variables[0][2], variables[1][2], variables[2][2] = check_date_validity(day, month, year)
+    """
 
     date_str = f'{str(day)}/{str(month)}/{str(year)}'
     print(f'"Inputted date is:" {date_str}.')
@@ -143,13 +159,17 @@ def check_date_validity(day, month, year):
     month_is_valid = False
     year_is_valid = False
 
-    if 2010 < year < 2050 and str(type(year)) == "<class 'int'>":
+    if 2010 <= year <= 2050 and str(type(year)) == "<class 'int'>":
         year_is_valid = True
         print('** Year is valid **')
+    else:
+        print('!! Inputted year is not valid, input an integer between 2010 and 2050 !!')
 
-    if 0 < month < 13 and str(type(month)) == "<class 'int'>":
+    if 1 <= month <= 12 and str(type(month)) == "<class 'int'>":
         month_is_valid = True
         print('** Month is valid **')
+    else:
+        print('!! Inputted month is not valid, input an integer between 1 and 12 !!')
 
     if year_is_valid:
         if leap_year_check(year):
@@ -162,9 +182,11 @@ def check_date_validity(day, month, year):
     days_in_months = [31, 28 + extra_day, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
     if month_is_valid:
-        if 0 < day < days_in_months[month - 1] + 1 and str(type(day)) == "<class 'int'>":
+        if 1 <= day <= days_in_months[month - 1] and str(type(day)) == "<class 'int'>":
             day_is_valid = True
             print('** Day is valid **')
+        else:
+            print(f'!! Inputted day is not valid, input an integer between 0 and {days_in_months[month - 1]} !!')
 
     return day_is_valid, month_is_valid, year_is_valid
 
