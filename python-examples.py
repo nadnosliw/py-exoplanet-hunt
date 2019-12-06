@@ -1,29 +1,8 @@
-# ================================== V.02 ================================== #
-# New method of creating header lines for separating exercise outputs
-# Matplotlib formatting options removed
+# ================================== V.03 ================================== #
+# Exercise 11 added
+# Some PEP8 formatting changes - 2 lines between functions
 # ========================================================================== #
 
-'''
-1. Write a program that outputs ‘Hello World’ to the terminal
-2. Write a program that outputs ‘Hello World’ 50 times using a for loop
-3. Write a program with a for loop that iterates 50 times and outputs ‘Hello
-World’ after every 5 iterations.
-4. Write a program with a for loop with 50 iterations and outputs ‘Hello
-World’ every odd value of the loop counter and, and ‘Goodbye World’
-every even value.
-5. Read in the text file ‘xy.txt’ and print the data to the terminal in 2 columns
-6. Plot the data in ‘xy.txt’ with blue dots
-7. Plot the data in ‘xy.txt’ with red crosses
-8. Plot the data in ‘xy.txt’ as a line plot
-9. Find the individual sums of the ‘x’ data and the ‘y’ data and print them to
-the terminal
-10. Determine the individual means for the ‘x’ and ‘y’ data and print them to
-the terminal
-11. Write a code that creates 3 variables called ‘day’, ‘month’, ‘year’. 
-Get the code to ask the user to input values for each variable, and then 
-output the values is the form "Today's date is:" dd/mm/yyyy.
-Now run the code using today's date as the input.
-'''
 
 import datetime
 import numpy as np
@@ -31,18 +10,22 @@ import matplotlib
 # matplotlib.use('PDF')
 import matplotlib.pyplot as plt
 
+
 ''' ======= EXERCISE ROUTINES ======='''
 def exercise_1():
     print('hello world')
+
 
 def exercise_2():
     for n in range(0, 50):
         print('foo bar ' + str(n))
 
+
 def exercise_3():
     for n in range(0, 50):
         if n % 5 == 0:
             print('foo bar ' + str(n))
+
 
 def exercise_4():
     for n in range(0, 50):
@@ -50,6 +33,7 @@ def exercise_4():
             print('good bye world ' + str(n))
         else:
             print('hello world ' + str(n))
+
 
 def exercise_5():
     # Read in the text file ‘xy.txt’ and print the data to the terminal in 2 columns
@@ -64,11 +48,13 @@ def exercise_5():
         counter += 1
     print('===== END PRINT ITEMS =====')
 
+
 def exercise_6():
     # Plot the data in ‘xy.txt’ with blue dots
     x, y = np.loadtxt('DATA/xy.txt', unpack=True)
     plt.plot(x, y, 'r+')
     plt.show()
+
 
 def exercise_7():
     # Plot the data in ‘xy.txt’ with red crosses
@@ -80,6 +66,7 @@ def exercise_7():
     fig.savefig(filename)
     print('** Plot saved as ' + filename + ' **')
 
+
 def exercise_8():
     # Plot the data in ‘xy.txt’ as a line plot
     x, y = np.loadtxt('DATA/xy.txt', unpack=True)
@@ -89,6 +76,7 @@ def exercise_8():
     filename = make_file_name_with_date(directory='Plots', name_stub='plot-exercise_8-', extension='.png')
     fig.savefig(filename)
     print('** Plot saved as ' + filename + ' **')
+
 
 def exercise_9():
     print('''Task: Find the individual sums of the 'x' data and the 'y' data and
@@ -102,12 +90,14 @@ def exercise_9():
         print('{} + {} = {}'.format(str(temp_x), str(temp_y), temp_x + temp_y))
         counter += 1
 
+
 def exercise_9_a():
     print('''Task: Find the individual sums of the ‘x’ data and the ‘y’ data and
     print them to the terminal''')
     x, y = np.loadtxt('DATA/xy.txt', unpack=True)
     x_and_y = np.vstack((x, y)).T
     print(np.sum(x_and_y, axis=1))
+
 
 def exercise_10():
     print('''Task: 10. Determine the individual means for the ‘x’ and ‘y’ data and print them to
@@ -117,12 +107,86 @@ def exercise_10():
     print(np.mean(x_and_y, axis=1))
 
 
+def exercise_11():
+    print('''Task: 11. Write a code that creates 3 variables called 
+    ‘day’, ‘month’, ‘year’. Get the code to ask the user to input
+    values for each variable, and then output the values in the form 
+    "Today's date is:" dd/mm/yyyy.
+    Now run the code using today's date as the input.''')
+    day = 0
+    day_is_valid = False
+    month = 0
+    month_is_valid = False
+    year = 0
+    year_is_valid = False
+    variables = [[day, 'day', day_is_valid], [month, 'month', month_is_valid], [year, 'year', year_is_valid]]
+    variable_validity = {'day': False, 'month': False, 'year': False}
+
+    input_message = 'Input the <variable> for today\'s date as an integer:  '
+
+    while not day_is_valid or not month_is_valid or not year_is_valid:
+        print('Back to while loop')
+        for variable in variables:
+            if not variable[2]:
+                variable[0] = int(input(input_message.replace('<variable>', variable[1])))
+        # validity_results = check_date_validity(day, month, year)
+        day = variables[0][0]
+        month = variables[1][0]
+        year = variables[2][0]
+        day_is_valid, month_is_valid, year_is_valid = check_date_validity(day, month, year)
+
+    date_str = f'{str(day)}/{str(month)}/{str(year)}'
+    print(f'"Inputted date is:" {date_str}.')
+
+
+def check_date_validity(day, month, year):
+    # Sub routine for exercise_11
+    day_is_valid = False
+    month_is_valid = False
+    year_is_valid = False
+
+    if 2010 < year < 2050 and str(type(year)) == "<class 'int'>":
+        year_is_valid = True
+        print('** Year is valid **')
+
+    if 0 < month < 13 and str(type(month)) == "<class 'int'>":
+        month_is_valid = True
+        print('** Month is valid **')
+
+    if year_is_valid:
+        if leap_year_check(year):
+            extra_day = 1
+        else:
+            extra_day = 0
+    else:
+        extra_day = 0
+    days_in_months = [31, 28 + extra_day, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    
+    if 0 < day < days_in_months[month - 1] + 1 and str(type(day)) == "<class 'int'>":
+        day_is_valid = True
+        print('** Day is valid **')
+
+    return day_is_valid, month_is_valid, year_is_valid
+
+
+def leap_year_check(year):
+    # Sub routine for exercise_11
+    if year % 4 != 0:
+        return False
+    if year % 100 != 0:
+        return True
+    if year % 400 != 0:
+        return False
+    else:
+        return True
+
+
 ''' ===== END EXERCISE ROUTINES ====='''
 
 
 list_of_exercises = [exercise_1, exercise_2, exercise_3, exercise_4,
                      exercise_5, exercise_6, exercise_7, exercise_8,
-                     exercise_9, exercise_9_a, exercise_10]
+                     exercise_9, exercise_9_a, exercise_10, exercise_11]
 
 
 def generate_current_date_str():
