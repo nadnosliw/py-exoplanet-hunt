@@ -1,6 +1,6 @@
-# ================================== V.03 ================================== #
-# Exercise 11 added
-# Some PEP8 formatting changes - 2 lines between functions
+# ================================== V.03.1 ================================== #
+# Exercise 11 modified with new validity checking logic
+#
 # ========================================================================== #
 
 
@@ -120,20 +120,18 @@ def exercise_11():
     year = 0
     year_is_valid = False
     variables = [[day, 'day', day_is_valid], [month, 'month', month_is_valid], [year, 'year', year_is_valid]]
-    variable_validity = {'day': False, 'month': False, 'year': False}
 
     input_message = 'Input the <variable> for today\'s date as an integer:  '
 
-    while not day_is_valid or not month_is_valid or not year_is_valid:
+    while not variables[0][2] or not variables[1][2] or not variables[2][2]:
         print('Back to while loop')
         for variable in variables:
             if not variable[2]:
                 variable[0] = int(input(input_message.replace('<variable>', variable[1])))
-        # validity_results = check_date_validity(day, month, year)
         day = variables[0][0]
         month = variables[1][0]
         year = variables[2][0]
-        day_is_valid, month_is_valid, year_is_valid = check_date_validity(day, month, year)
+        variables[0][2], variables[1][2], variables[2][2] = check_date_validity(day, month, year)
 
     date_str = f'{str(day)}/{str(month)}/{str(year)}'
     print(f'"Inputted date is:" {date_str}.')
@@ -160,11 +158,13 @@ def check_date_validity(day, month, year):
             extra_day = 0
     else:
         extra_day = 0
+
     days_in_months = [31, 28 + extra_day, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    
-    if 0 < day < days_in_months[month - 1] + 1 and str(type(day)) == "<class 'int'>":
-        day_is_valid = True
-        print('** Day is valid **')
+
+    if month_is_valid:
+        if 0 < day < days_in_months[month - 1] + 1 and str(type(day)) == "<class 'int'>":
+            day_is_valid = True
+            print('** Day is valid **')
 
     return day_is_valid, month_is_valid, year_is_valid
 
