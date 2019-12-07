@@ -39,7 +39,7 @@ def generate_data_plot(x, y, system_number):
 
     filename = make_file_name_with_date(directory='Plots', name_stub='plot for ' + system_number + ' - ', extension='.png')
     fig.savefig(filename)
-    print('** Plot saved as ' + filename + ' **')
+    print('** Plot saved as "' + filename + '" **')
 
 
 # ============================= FORMATTING AND UI ============================= #
@@ -94,7 +94,7 @@ def main():
                 generate_data_plot(data[0], data[1], catalogue_number)
                 valid_input = True
 
-    print(headline('Process Complete', '=', 100))
+    print('\n' + headline('Process Complete', '=', 100))
 
 
 '002571238'
