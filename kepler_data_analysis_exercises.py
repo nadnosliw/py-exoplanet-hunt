@@ -42,7 +42,7 @@ def generate_data_plot(x, y, system_number, plot_type):
                                         name_stub=plot_type + ' plot for ' + system_number + ' - ',
                                         extension='.png')
     fig.savefig(filename)
-    print('** Plot saved as "' + filename + '" **')
+    print(headline(f'Plot saved as "{filename}"', width=100, symbol='*'))
 
 
 def write_to_csv(filename, path, data_list):
@@ -88,19 +88,44 @@ def generate_current_date_str():
 
 
 # ============================= PHASE FOLDING ============================= #
+def calculate_period():
+    transit_1 = float(input('Input the time of first transit: '))
+    transit_10 = float(input('Input the time of tenth transit: '))
+    period = (transit_10 - transit_1)/9
+    print('Period calculated to be: ' + str(period))
+    return transit_1, period
+
+
 def shift_data_by_half_period(data, period):
     # Data is a 2D array
     operand_array = [[period/2], [0]]  # Create a 2D array with half period and 0
     return np.subtract(data, operand_array)  # Subtracts half period from all data in first column
 
 
-def perform_mod_on_array(data_array, period):
+def shift_data_to_zero(data_array, transit_1):
+    # shift_value = float(input('Input the amount to shift the time data by: '))
+    operand_array = [[transit_1], [0]]  # Create a 2D array with shift_value and 0
+    return np.subtract(data_array, operand_array)  # Subtracts shift_value from all data in first column
+
+
+def perform_mod_on_array_with_np_mod(data_array, period):
+    # a sensible to rewrite this function would be to take a 1D array as input and perform the mod on that
     # Data is a 2D array
     max_value = np.amax(data_array[1])
     # print(max_value)
     # Create a 2D array with period and max value + 1 (modulo operation will return original num)
     operand_array = [[period], [max_value + 1]]
     return np.mod(data_array, operand_array)  # Calculates the division remainder of first column with period
+
+
+def perform_mod_on_array(data_array, period):
+    mod_array = [[], []]
+    for row in range(0, len(data_array[0])):
+        mod_time_plot = data_array[0][row] % period
+        intensity = data_array[1][row]
+        mod_array[0].append(mod_time_plot)
+        mod_array[1].append(intensity)
+    return mod_array
 
 
 def transpose_2d_data(data_array):
@@ -145,8 +170,9 @@ def handle_catalogue_number_input(get_plot):
 def handle_phase_fold_input():
     valid_input = False
     while not valid_input:
-        time_period = float(input(
-            'Type the orbital time period of the system (e.g. 3.117, 5.632) : '))
+        transit_1, time_period = calculate_period()
+        # time_period = float(input(
+        #     'Type the orbital time period of the system (e.g. 3.522, 5.632) : '))
 
         # Check that the time_period is a valid float and greater than 0
         if time_period != '' and str(type(time_period)) == "<class 'float'>" and time_period > 0:
@@ -155,7 +181,7 @@ def handle_phase_fold_input():
         else:
             print('\nInvalid time period for the system.  Please try again.\n\n')
 
-    return time_period
+    return transit_1, time_period
 
 
 # =============================== EXECUTION =============================== #
@@ -184,18 +210,21 @@ Select an option from above by number (1, 2 or 3): '''))
     catalogue_number_and_data = handle_catalogue_number_input(get_plot=task_options['Get plot'])
 
     if task_options['Phase fold']:
-        time_period = handle_phase_fold_input()
-        #print('period: ' + str(time_period))
+        transit_1, time_period = handle_phase_fold_input()
+        # print('period: ' + str(time_period))
         data = catalogue_number_and_data[1]
-        #print('data: ' + str(data))
-        shifted_data = shift_data_by_half_period(data, time_period)
-        #print('shifted data: ' + str(shifted_data))
+        # print('data: ' + str(data))
+        # shifted_data = shift_data_by_half_period(data, time_period)
+
+        # Shift data so that first transit occurs at t=0
+        shifted_data = shift_data_to_zero(data, transit_1)
+        # print('shifted data: ' + str(shifted_data))
         write_to_csv("shifted_data", 'Data_Exports', shifted_data)
         phase_folded_data = perform_mod_on_array(shifted_data, time_period)
-        print('folded data: ' + str(phase_folded_data))
+        # print('folded data: ' + str(phase_folded_data))
         write_to_csv("phase_folded_data", 'Data_Exports', phase_folded_data)
         shifted_phase_folded_data = shift_data_by_half_period(phase_folded_data, time_period)
-        #print('shifted data 2: ' + str(shifted_phase_folded_data))
+        # print('shifted data 2: ' + str(shifted_phase_folded_data))
         write_to_csv("shifted_phase_folded_data", 'Data_Exports', shifted_phase_folded_data)
         generate_data_plot(shifted_phase_folded_data[0],
                            shifted_phase_folded_data[1],
@@ -213,4 +242,3 @@ main()
 # print(perform_mod_on_array([[1, 2, 3, 4], [2, 4, 6, 8]], 3))
 
 # print(3 % 1)
-
