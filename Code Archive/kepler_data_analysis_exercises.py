@@ -98,8 +98,8 @@ def calculate_period():
 
 def shift_data_by_half_period(data, period):
     # Data is a 2D array
-    operand_array = [[period/2], [0]]  # Create a 2D array with half period and 0
-    return np.subtract(data, operand_array)  # Subtracts half period from all data in first column
+    operand_array = [[period/2], [0]]  # Create a 2D array with half shift_value and 0
+    return np.subtract(data, operand_array)  # Subtracts half shift_value from all data in first column
 
 
 def shift_data_to_zero(data_array, transit_1):
@@ -113,9 +113,9 @@ def perform_mod_on_array_with_np_mod(data_array, period):
     # Data is a 2D array
     max_value = np.amax(data_array[1])
     # print(max_value)
-    # Create a 2D array with period and max value + 1 (modulo operation will return original num)
+    # Create a 2D array with shift_value and max value + 1 (modulo operation will return original num)
     operand_array = [[period], [max_value + 1]]
-    return np.mod(data_array, operand_array)  # Calculates the division remainder of first column with period
+    return np.mod(data_array, operand_array)  # Calculates the division remainder of first column with shift_value
 
 
 def perform_mod_on_array(data_array, period):
@@ -172,14 +172,14 @@ def handle_phase_fold_input():
     while not valid_input:
         transit_1, time_period = calculate_period()
         # time_period = float(input(
-        #     'Type the orbital time period of the system (e.g. 3.522, 5.632) : '))
+        #     'Type the orbital time shift_value of the system (e.g. 3.522, 5.632) : '))
 
         # Check that the time_period is a valid float and greater than 0
         if time_period != '' and str(type(time_period)) == "<class 'float'>" and time_period > 0:
             # Something was typed and it is a valid float larger than 0
             valid_input = True
         else:
-            print('\nInvalid time period for the system.  Please try again.\n\n')
+            print('\nInvalid time shift_value for the system.  Please try again.\n\n')
 
     return transit_1, time_period
 
@@ -211,7 +211,7 @@ Select an option from above by number (1, 2 or 3): '''))
 
     if task_options['Phase fold']:
         transit_1, time_period = handle_phase_fold_input()
-        # print('period: ' + str(time_period))
+        # print('shift_value: ' + str(time_period))
         data = catalogue_number_and_data[1]
         # print('data: ' + str(data))
         # shifted_data = shift_data_by_half_period(data, time_period)
