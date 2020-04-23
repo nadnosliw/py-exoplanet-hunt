@@ -424,5 +424,3 @@ Select an option from above by number (1, 2 or 3): '''))
 
 
 main()
-
-# Add option to phase fold a curve with time period input so can jump directly to a correctly phase folded curve
