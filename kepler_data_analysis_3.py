@@ -51,15 +51,30 @@ def generate_data_plot(x, y, system_number, plot_type):
 
 def write_to_csv(filename, path, data_list):
     # Transpose the data_list
-    # transposed_data = list(zip(data_list))
-    transposed_data = transpose_2d_data(data_list)
+    transposed_data = transpose_2d_columns_separate_array_into_rows(data_list)
     filename_and_path = path + '/' + filename + '.csv'
     csv_file = open(filename_and_path, 'w+')  # w+ means create new file if doesn't exist
     list_length = len(transposed_data)
+    if list_length > 1:
+        row_or_rows = 'rows'
+    else:
+        row_or_rows = 'row'
     with csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(transposed_data)
-    print(headline(f'Data exported to {filename_and_path} with {str(list_length)} rows', width=100, symbol='*'))
+    print(headline(f'Data exported to {filename_and_path} with {str(list_length)} {row_or_rows}', '*', 100))
+
+
+def import_csv_file(file_name, file_path):
+    csv_file = open(file_path + '/' + file_name, 'r')
+    output_array = []
+
+    with csv_file:
+        reader = csv.reader(csv_file)
+        for row in reader:
+            output_array.append(row)
+
+    return output_array
 
 
 # ============================= FORMATTING AND UI ============================= #
@@ -117,20 +132,38 @@ def perform_mod_on_time_data(data_array, period):
     return [new_time_array, data_array[1]]
 
 
-def transpose_2d_data(data_array):
+def transpose_2d_columns_separate_array_into_rows(data_array):
     transposed_array = []
     for n in range(0, len(data_array[0])):
         transposed_array.append([data_array[0][n], data_array[1][n]])
     return transposed_array
 
 
+def transpose_2d_rows_separated_array_into_columns(rows_separated_array):
+    transposed_array = []
+    # Get number of columns from the first row
+    number_of_columns = len(rows_separated_array[0])
+    for column in range(0, number_of_columns):
+        # Add empty list for each column to the transposed array
+        transposed_array.append([])
+
+    for row in rows_separated_array:
+        # Iterate through the rows in the input array
+        for column, data in enumerate(row):
+            # For each row track the number of items which is the column number
+            # Add the data point to the correct column list in the transposed array
+            transposed_array[column].append(data)
+
+    return transposed_array
+
+
 def time_period_iterator(catalogue_number, data_array, coordinate_1, coordinate_2, resolution):
     time_period = (coordinate_2 - coordinate_1) / 9
-    datum_time_period = time_period
+    time_period = float(str(time_period)[0:7])  # Tidy up time_period to 7 s.f. value
 
     # Subtract 5 x resolution from the time_period and iterate adding the resolution from there
     time_period -= resolution * 5
-    while time_period < datum_time_period + 5 * resolution:
+    while time_period < time_period + 5 * resolution:
         # Shift all data points so that the first transit occurs at time_period/2 from 0
         # Subtract (first_transit_coordinate - time_period/2) from all data points
         zeroed_data = shift_data_plots_horizontally(data_array, coordinate_1 - time_period/2)
@@ -147,17 +180,40 @@ def time_period_iterator(catalogue_number, data_array, coordinate_1, coordinate_
                            'Phase folded')
 
         # Ask user if they want to save the time period, continue iterating, or exit
-        next_step = handle_phase_fold_evaluation(time_period, resolution)
+        next_step = handle_phase_fold_next_step(time_period, resolution)
 
         if next_step == 'Get next plot':
             time_period += resolution
         elif next_step == 'Increase resolution':
-            resolution /= 10  # Make resolution small by factor of ten
-            time_period -= resolution * 5  # Offset time_period by half of hte resolution range
+            # Subtract resolution value to account for overshoot
+            time_period -= resolution
+            resolution /= 10  # Make resolution smaller by factor of ten
+            time_period -= resolution * 5  # Offset time_period by half of the resolution range
         elif next_step == 'Exit':
-            break
+            # Subtract resolution value to account for overshoot
+            time_period -= resolution
+            return time_period
 
-    return time_period
+    return 'N/A'
+
+
+def phase_fold_single_time_period(catalogue_number, data_array, coordinate_1, time_period):
+    time_period = float(str(time_period)[0:7])  # Tidy up time_period to 7 s.f. value
+
+    # Shift all data points so that the first transit occurs at time_period/2 from 0
+    # Subtract (first_transit_coordinate - time_period/2) from all data points
+    zeroed_data = shift_data_plots_horizontally(data_array, coordinate_1 - time_period/2)
+
+    phase_folded_data = perform_mod_on_time_data(zeroed_data, time_period)
+
+    shifted_phase_folded_data = shift_data_plots_horizontally(phase_folded_data, time_period / 2)
+
+    # write_to_csv("shifted_phase_folded_data", 'Data_Exports', shifted_phase_folded_data)
+
+    generate_data_plot(shifted_phase_folded_data[0],
+                       shifted_phase_folded_data[1],
+                       catalogue_number,
+                       'Phase folded')
 
 
 # ============================= HANDLE INPUTS ============================= #
@@ -192,23 +248,7 @@ def handle_catalogue_number_input(get_plot):
     return catalogue_number, data
 
 
-def handle_phase_fold_input_old():
-    valid_input = False
-    while not valid_input:
-        time_period = float(input(
-            'Type the orbital time shift_value of the system (e.g. 3.117, 5.632) : '))
-
-        # Check that the time_period is a valid float and greater than 0
-        if time_period != '' and str(type(time_period)) == "<class 'float'>" and time_period > 0:
-            # Something was typed and it is a valid float larger than 0
-            valid_input = True
-        else:
-            print('\nInvalid time shift_value for the system.  Please try again.\n\n')
-
-    return time_period
-
-
-def handle_phase_fold_input(message):
+def handle_time_coordinate_input(message):
     # Ask for coordinates of first and last transits
     valid_input = False
     while not valid_input:
@@ -229,8 +269,8 @@ def handle_phase_fold_input(message):
     return coordinate
 
 
-def handle_phase_fold_evaluation(time_period, resolution):
-    print(f'The time period for the most recent plot was {str(time_period)}')
+def handle_phase_fold_next_step(time_period, resolution):
+    print(f'\n\nThe time period for the last plot was {str(time_period)}')
     print(f'The current resolution being used is {str(resolution)}\n')
     valid_input = False
     # task_options = {'Get next plot': False, 'Increase resolution': False, 'Exit': False}
@@ -249,11 +289,84 @@ def handle_phase_fold_evaluation(time_period, resolution):
     return phase_fold_next_step_options[selected_option].get('Name')
 
 
+def handle_saving_time_period_to_csv(time_period, catalogue_number):
+    print(f'Do you want to save the time period ({str(time_period)}) for system {str(catalogue_number)}?')
+    valid_input = False
+    while not valid_input:
+        user_selection = input('''y Save time period to csv\nn Do not save time period to csv\nRespond y/n: ''')
+        if user_selection == 'y' or user_selection == 'n':
+            valid_input = True
+
+    if user_selection == 'y':
+        # Get existing file, check for the catalogue number in column 1, update or add the time period in column 2
+        try:
+            existing_array = import_csv_file(system_parameters_csv_file_name + '.csv', 'Data_Exports/')
+            transposed_array = transpose_2d_rows_separated_array_into_columns(existing_array)
+            try:
+                system_row_number = transposed_array[0].index(catalogue_number)
+                # This system already has a value, update the time period
+                transposed_array[1][system_row_number] = time_period
+                # Write data back to csv
+                write_to_csv(system_parameters_csv_file_name, 'Data_Exports', transposed_array)
+            except ValueError:
+                # This system does not already has a value, add a new row
+                transposed_array[0].append(catalogue_number)
+                transposed_array[1].append(time_period)
+        except (OSError, IOError):
+            # The file does not yet exist, write a new array to the csv
+            write_to_csv(system_parameters_csv_file_name, 'Data_Exports', [[catalogue_number], [time_period]])
+
+    return
+
+
+def handle_time_period_input(catalogue_number):
+    # Ask for time period
+    valid_input = False
+    while not valid_input:
+        # Amend this to look up the time period from the csv file
+        time_period = float(input(
+            f'Input the accurate time period for system {catalogue_number} (e.g. 3.52254) : '))
+
+        # Check that the period is a valid float and greater than 0
+        if time_period != '' and str(type(time_period)) == "<class 'float'>" and time_period > 0:
+            # Something was typed and it is a valid float larger than 0
+            valid_input = True
+        else:
+            print('\nInvalid time period value entered.  Please try again.\n\n')
+
+    return time_period
+
+
+def handle_phase_fold_input_option():
+    print(f'\n\nChoose an option from below')
+    valid_input = False
+    while not valid_input:
+        for option_number, option in enumerate(phase_fold_input_options, 1):
+            print(option_number, option.get('Name'))  # , f'[More information, {option.get("Info")}]')
+            print('    I.e. ' + option.get('Info'))
+        selected_option = int(input('\nSelect an option above (1 or 2): '))
+
+        if str(type(selected_option)) == "<class 'int'>":
+            if 1 <= selected_option <= len(phase_fold_input_options):
+                valid_input = True
+                selected_option -= 1  # -1 to account for zero indexing
+
+    return phase_fold_input_options[selected_option].get('Name')
+
+
 # ============================= GLOBAL VARIABLES ============================= #
-phase_fold_next_step_options = [{'Name': 'Get next plot', 'Info': 'Get the next plot by at the same resolution'},
-                                {'Name': 'Increase resolution',
-                                 'Info': 'Increase resolution by factor of 10 and get plots around the current value of time_period'},
-                                {'Name': 'Exit', 'Info': 'Exit the iteration'}]
+phase_fold_input_options = [
+    {'Name': 'Iterate period estimates', 'Info': 'Start with rough estimate for period and find accurate value'},
+    {'Name': 'Phase fold accurate period',
+     'Info': 'You already have an accurate period and just need a phase folded plot'}
+]
+phase_fold_next_step_options = [
+    {'Name': 'Get next plot', 'Info': 'Get the next plot at the same resolution'},
+    {'Name': 'Increase resolution',
+     'Info': 'Increase resolution by factor of 10 and get plots around the previous value of the time period'},
+    {'Name': 'Exit', 'Info': 'Exit the iteration'}
+]
+system_parameters_csv_file_name = 'System_Parameters'
 
 
 # =============================== EXECUTION =============================== #
@@ -282,25 +395,34 @@ Select an option from above by number (1, 2 or 3): '''))
     catalogue_number_and_data = handle_catalogue_number_input(get_plot=task_options['Get plot'])
 
     if task_options.get('Phase fold'):
-        time_coordinate_1 = handle_phase_fold_input('first transit')
-        time_coordinate_2 = handle_phase_fold_input('last transit')
-
         catalogue_number = catalogue_number_and_data[0]
         data = catalogue_number_and_data[1]
+        phase_fold_option = handle_phase_fold_input_option()
+        if phase_fold_option == 'Iterate period estimates':
+            time_coordinate_1 = handle_time_coordinate_input('first transit')
+            time_coordinate_2 = handle_time_coordinate_input('last transit')
 
-        finalised_time_period = time_period_iterator(
-            catalogue_number,
-            data,
-            time_coordinate_1,
-            time_coordinate_2,
-            0.01
-        )
+            finalised_time_period = time_period_iterator(
+                catalogue_number,
+                data,
+                time_coordinate_1,
+                time_coordinate_2,
+                0.01
+            )
 
-    print('\n' + headline(f'Process complete, finalised time period = {finalised_time_period}', '=', 100))
+            if finalised_time_period != 'N/A':
+                finalised_time_period = float(str(finalised_time_period)[0:7])  # Shorten to 7 s.f.
+                print('\n' + headline(f'Phase folding complete, finalised time period = {finalised_time_period}', '=', 100))
+                handle_saving_time_period_to_csv(finalised_time_period, catalogue_number)
+            else:
+                print('\n' + headline(f'Phase folding ended', '=', 100))
+        elif phase_fold_option == 'Phase fold accurate period':
+            time_coordinate_1 = handle_time_coordinate_input('first transit')
+            accurate_time_period = handle_time_period_input(catalogue_number)
+
+            phase_fold_single_time_period(catalogue_number, data, time_coordinate_1, accurate_time_period)
 
 
-'test system: 006922244'
-'002571238'
 main()
 
-# ADD an option to iterate with the previous time period
+# Add option to phase fold a curve with time period input so can jump directly to a correctly phase folded curve
