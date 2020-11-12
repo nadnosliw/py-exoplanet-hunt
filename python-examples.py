@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 
 
 ''' ======= EXERCISE ROUTINES ======='''
+
+
 def exercise_1():
     print('hello world')
 
@@ -59,7 +61,7 @@ def exercise_6():
 
 
 def exercise_7():
-    # Plot the data in ‘xy.txt’ with red crosses
+    print('Task: Plot the data in ‘xy.txt’ with red crosses')
     x, y = np.loadtxt('DATA/xy.txt', unpack=True)
     fig = plt.figure()  # Initialise the figure for plotting onto
     plt.plot(x, y, 'r+')
@@ -70,7 +72,7 @@ def exercise_7():
 
 
 def exercise_8():
-    # Plot the data in ‘xy.txt’ as a line plot
+    print('Task: Plot the data in ‘xy.txt’ as a line plot')
     x, y = np.loadtxt('DATA/xy.txt', unpack=True)
     fig = plt.figure()  # Initialise the figure for plotting onto
     plt.plot(x, y, '-m')
