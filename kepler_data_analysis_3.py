@@ -51,7 +51,8 @@ def generate_data_plot(x, y, system_number, plot_type):
 
 def write_to_csv(filename, path, data_list):
     # Transpose the data_list
-    transposed_data = transpose_2d_columns_separate_array_into_rows(data_list)
+    transposed_data = transpose_2d_columns_separated_array_into_rows(data_list)
+    print(transposed_data)
     filename_and_path = path + '/' + filename + '.csv'
     csv_file = open(filename_and_path, 'w+')  # w+ means create new file if doesn't exist
     list_length = len(transposed_data)
@@ -75,6 +76,32 @@ def import_csv_file(file_name, file_path):
             output_array.append(row)
 
     return output_array
+
+
+def look_up_value_in_csv_file(file_name, file_path, key_value, key_col, match_col):
+    database_array = import_csv_file(file_name + '.csv', file_path)
+    transposed_array = transpose_2d_rows_separated_array_into_columns(database_array)
+    # Convert 1 indexing to 0 indexing by subtracting 1
+    key_col -= 1
+    match_col -= 1
+    try:
+        system_row_number = transposed_array[key_col].index(key_value)
+        # This system already has a value, update the time period
+        match_value = transposed_array[match_col][system_row_number]
+        return match_value
+    except ValueError:
+        file_name_and_path = file_path + '/' + file_name
+        print(
+            headline(
+                'Error, this value ('
+                + str(key_value)
+                + ') was not found in column '
+                + str(key_col + 1)
+                + f' of this file ({file_name_and_path})',
+                '!',
+                120)
+        )
+        return 'N/A'
 
 
 # ============================= FORMATTING AND UI ============================= #
@@ -132,10 +159,19 @@ def perform_mod_on_time_data(data_array, period):
     return [new_time_array, data_array[1]]
 
 
-def transpose_2d_columns_separate_array_into_rows(data_array):
+def transpose_2d_columns_separated_array_into_rows(columns_separated_array):
     transposed_array = []
-    for n in range(0, len(data_array[0])):
-        transposed_array.append([data_array[0][n], data_array[1][n]])
+    for row in range(0, len(columns_separated_array[0])):
+        # Add empty list for each row to the transposed array
+        transposed_array.append([])
+
+    for column in columns_separated_array:
+        # Iterate through the columns in the input array
+        for row, data in enumerate(column):
+            # For each column track the number of items which is the row number
+            # Add the data point to the correct row list in the transposed array
+            transposed_array[row].append(data)
+
     return transposed_array
 
 
@@ -275,11 +311,11 @@ def handle_phase_fold_next_step(time_period, resolution):
     valid_input = False
     # task_options = {'Get next plot': False, 'Increase resolution': False, 'Exit': False}
     while not valid_input:
-        # print('Select the next step to take: ')
+        print('\n' + headline('Select the next step', '*', 50))
         for option_number, option in enumerate(phase_fold_next_step_options, 1):
             print(option_number, option.get('Name'))  # , f'[More information, {option.get("Info")}]')
             print('    I.e. ' + option.get('Info'))
-        selected_option = int(input('\nSelect the next step to take from the options above (1, 2 or 3): '))
+        selected_option = int(input('\nSelect from the options above (1, 2 or 3): '))
 
         if str(type(selected_option)) == "<class 'int'>":
             if 1 <= selected_option <= len(phase_fold_next_step_options):
@@ -289,7 +325,7 @@ def handle_phase_fold_next_step(time_period, resolution):
     return phase_fold_next_step_options[selected_option].get('Name')
 
 
-def handle_saving_time_period_to_csv(time_period, catalogue_number):
+def handle_saving_time_period_to_csv(catalogue_number, time_period, time_coordinate_1):
     print(f'Do you want to save the time period ({str(time_period)}) for system {str(catalogue_number)}?')
     valid_input = False
     while not valid_input:
@@ -300,21 +336,29 @@ def handle_saving_time_period_to_csv(time_period, catalogue_number):
     if user_selection == 'y':
         # Get existing file, check for the catalogue number in column 1, update or add the time period in column 2
         try:
+            # This block executes if the file already exists; otherwise error
             existing_array = import_csv_file(system_parameters_csv_file_name + '.csv', 'Data_Exports/')
             transposed_array = transpose_2d_rows_separated_array_into_columns(existing_array)
             try:
                 system_row_number = transposed_array[0].index(catalogue_number)
-                # This system already has a value, update the time period
+                # This system already has a value, update the time period and time coordinate
                 transposed_array[1][system_row_number] = time_period
+                transposed_array[2][system_row_number] = time_coordinate_1
                 # Write data back to csv
                 write_to_csv(system_parameters_csv_file_name, 'Data_Exports', transposed_array)
             except ValueError:
-                # This system does not already has a value, add a new row
+                # This system does not already have a value, add a new row
                 transposed_array[0].append(catalogue_number)
                 transposed_array[1].append(time_period)
+                transposed_array[2].append(time_coordinate_1)
+                # Write data to csv
+                write_to_csv(system_parameters_csv_file_name, 'Data_Exports', transposed_array)
         except (OSError, IOError):
             # The file does not yet exist, write a new array to the csv
-            write_to_csv(system_parameters_csv_file_name, 'Data_Exports', [[catalogue_number], [time_period]])
+            write_to_csv(system_parameters_csv_file_name,
+                         'Data_Exports',
+                         [[catalogue_number], [time_period], [time_coordinate_1]]
+                         )
 
     return
 
@@ -338,7 +382,7 @@ def handle_time_period_input(catalogue_number):
 
 
 def handle_phase_fold_input_option():
-    print(f'\n\nChoose an option from below')
+    print('\n' + headline('Choose an option from below', '*', 50))
     valid_input = False
     while not valid_input:
         for option_number, option in enumerate(phase_fold_input_options, 1):
@@ -357,7 +401,7 @@ def handle_phase_fold_input_option():
 # ============================= GLOBAL VARIABLES ============================= #
 phase_fold_input_options = [
     {'Name': 'Iterate period estimates', 'Info': 'Start with rough estimate for period and find accurate value'},
-    {'Name': 'Phase fold accurate period',
+    {'Name': 'Phase fold with an accurate period',
      'Info': 'You already have an accurate period and just need a phase folded plot'}
 ]
 phase_fold_next_step_options = [
@@ -371,11 +415,12 @@ system_parameters_csv_file_name = 'System_Parameters'
 
 # =============================== EXECUTION =============================== #
 def main():
-    print(headline('Process Started', '=', 100) + '\n')
+    print(headline('Process Started', '=', 120) + '\n')
     valid_input = False
     task_options = {'Get plot': False, 'Phase fold': False}
     while not valid_input:
-        task_selection = int(input('''Specify task(s): \n1 Get a plot of a system only
+        print(headline('Specify task(s) to carry out', '*', 50))
+        task_selection = int(input('''1 Get a plot of a system only
 2 Phase fold a plot only
 3 Get a plot and phase fold it
 Select an option from above by number (1, 2 or 3): '''))
@@ -412,13 +457,35 @@ Select an option from above by number (1, 2 or 3): '''))
 
             if finalised_time_period != 'N/A':
                 finalised_time_period = float(str(finalised_time_period)[0:7])  # Shorten to 7 s.f.
-                print('\n' + headline(f'Phase folding complete, finalised time period = {finalised_time_period}', '=', 100))
-                handle_saving_time_period_to_csv(finalised_time_period, catalogue_number)
+                print('\n' + headline(
+                    f'Phase folding complete, finalised time period = {finalised_time_period}', '=', 120)
+                      )
+                handle_saving_time_period_to_csv(catalogue_number, finalised_time_period, time_coordinate_1)
             else:
-                print('\n' + headline(f'Phase folding ended', '=', 100))
-        elif phase_fold_option == 'Phase fold accurate period':
-            time_coordinate_1 = handle_time_coordinate_input('first transit')
-            accurate_time_period = handle_time_period_input(catalogue_number)
+                print('\n' + headline(f'Phase folding ended', '=', 120))
+
+        elif phase_fold_option == 'Phase fold with an accurate period':
+            # Look up time coordinate for first transit in csv database, with fallback to requesting it from user
+            try:
+                time_coordinate_1 = look_up_value_in_csv_file(
+                    system_parameters_csv_file_name,
+                    'Data_Exports',
+                    catalogue_number, 1, 3
+                )
+                time_coordinate_1 = float(time_coordinate_1)
+            except:
+                time_coordinate_1 = handle_time_coordinate_input('first transit')
+
+            # Look up time period in csv database, with fallback to requesting it from user
+            try:
+                accurate_time_period = look_up_value_in_csv_file(
+                    system_parameters_csv_file_name,
+                    'Data_Exports',
+                    catalogue_number, 1, 2
+                )
+                accurate_time_period = float(accurate_time_period)
+            except:
+                accurate_time_period = handle_time_period_input(catalogue_number)
 
             phase_fold_single_time_period(catalogue_number, data, time_coordinate_1, accurate_time_period)
 
